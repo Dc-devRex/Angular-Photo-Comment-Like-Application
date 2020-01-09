@@ -1,0 +1,451 @@
+ANGULAR PROJECT CODE:
+
+INDEX.HTML:
+
+<!DOCTYPE html>
+<html>
+  <head>
+      
+    <title>Photo Blog</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+  </head>
+  <body>
+    <app-root>Loading...</app-root>
+  </body>
+</html>
+
+-----------------------------------------------
+
+MAIN.TS
+
+// Import global stylesheet
+import './styles/main.css';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule } from './app/app.module';
+
+platformBrowserDynamic().bootstrapModule(AppModule);
+
+---------------------------------------------------
+
+POLYFILLS.TS:
+
+// libs
+import 'core-js/es6';
+import 'core-js/es7/reflect';
+require('zone.js/dist/zone');
+
+if (process.env.ENV === 'release') {
+    // Release
+} else {
+    // Develop
+    Error['stackTraceLimit'] = Infinity;
+    require('zone.js/dist/long-stack-trace-zone');
+}
+
+-------------------------------------------------------
+
+TSCONFIG.JSON:
+
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "removeComments": false,
+    "noImplicitAny": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "typeRoots": [
+      "../node_modules/@types/"
+    ]
+  }
+}
+
+-----------------------------------------------------------
+
+VENDOR.TS:
+
+// angular
+import '@angular/core';
+import '@angular/common';
+import '@angular/platform-browser';
+import '@angular/platform-browser-dynamic';
+import '@angular/http';
+import '@angular/forms';
+
+// 3rd party
+import 'core-js';
+import 'rxjs';
+import 'angular-in-memory-web-api';
+
+---------------------------------------------------------------
+
+
+
+APP.MODULE.TS:
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpModule } from '@angular/http';
+import { FormsModule } from '@angular/forms';
+import { InMemoryWebApiModule } from 'angular-in-memory-web-api';
+import { AppComponent } from './app.component';
+import { EntryListComponent, EntryComponent, EntryService, EntryCommentFormComponent } from './entries';
+import { InMemoryEntryService } from './backend';
+
+@NgModule({
+    imports: [
+        BrowserModule,
+        HttpModule,
+        FormsModule,
+        InMemoryWebApiModule.forRoot(InMemoryEntryService) 
+    ],
+    providers: [ EntryService ],
+    declarations: [
+        AppComponent, 
+        EntryComponent,
+        EntryListComponent,
+        EntryCommentFormComponent
+        ],
+    bootstrap: [AppComponent]
+})
+export class AppModule {
+
+}
+
+-----------------------------------------------
+
+APP.COMPONENT.TS:
+
+import { Component } from '@angular/core';
+
+@Component({
+    selector: 'app-root',
+    templateUrl: 'app.component.html',
+    styleUrls: ['app.component.css']
+})
+export class AppComponent {
+    emoji: string[] = ['🦖', '🦕', '☄️', '💀'];
+    activeEmoji: string;
+    changeEmoji() {
+        this.activeEmoji = this.emoji[Math.floor(Math.random() * this.emoji.length)];
+    }
+}
+
+---------------------------------------------------
+
+APP.COMPONENT.HTML:
+
+<app-entry-list></app-entry-list>
+
+------------------------------------------------------
+
+BACKEND.TS:
+
+import { InMemoryDbService } from 'angular-in-memory-web-api';
+
+declare var file: any;
+
+export class InMemoryEntryService implements InMemoryDbService {
+    createDb() {
+        let entries = [
+            {
+                id: 1,
+                title: 'Burning Sundown Behind Trees',
+                description: 'A view of the setting sun through trees',
+                photo: require('../../photos/Burning-sundown-behind-trees.jpg'),
+                comments: [
+                    {
+                        id: 1,
+                        name: 'Jane Smith',
+                        comment: 'This is my favorite! I love it!'
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: 'Water Lilies and Algas',
+                description: 'Still water with floating lilies',
+                photo: require('../../photos/Water-lilies-and-algas.jpg'),
+                comments: [
+                    {
+                        id: 2,
+                        name: 'Kyle Jones',
+                        comment: 'Nice!'
+                    },
+                    {
+                        id: 3,
+                        name: 'Alecia Clark',
+                        comment: 'All the greens make this amazing.'
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: 'German Steam Engine',
+                description: 'Trains at the station',
+                photo: require('../../photos/German-steam-engine-No.4.jpg'),
+                comments: []
+            },
+            {
+                id: 4,
+                title: 'Red Sun Stripe at Horizon',
+                description: 'Green fields and a glimpse of sunlight',
+                photo: require('../../photos/Red-sun-stripe-at-horizon.jpg'),
+                comments: [
+                    {
+                        id: 4,
+                        name: 'Steve Johnson',
+                        comment: 'It looks like trouble is on the way.'
+                    },
+                    {
+                        id: 5,
+                        name: 'Becky M',
+                        comment: 'I imagine this was a shot of a storm that just passed.'
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: 'Sundown Behind Fields',
+                description: 'Clouds taking form at sun set',
+                photo: require('../../photos/Sundown-behind-fields.jpg'),
+                comments: [
+                    {
+                        id: 6,
+                        name: 'Lisa Frank',
+                        comment: 'Beautiful!'
+                    }
+                ]
+            }
+        ];
+        return { entries };
+    }
+}
+
+----------------------------------------------------------------------------------------------
+
+ENTRY-LIST.COMPONENT:
+
+<app-entry *ngFor="let entry of entries" [entry]="entry"></app-entry>
+
+----------------------------------------------------------
+
+ENTRY-LIST.COMPONENT.TS:
+
+import { Component, OnInit } from "@angular/core";
+import { EntryService } from '../shared/entry.service';
+import { Entry } from '../shared/entry.model';
+
+@Component({
+    selector: 'app-entry-list',
+    templateUrl: 'entry-list.component.html',
+    styleUrls: ['entry-list.component.css']
+})
+
+export class EntryListComponent implements OnInit {
+    entries: Entry[];
+
+    constructor(private entryService: EntryService) {
+     
+    }
+
+    ngOnInit() {
+        this.entryService
+                .getEntries()
+                .then(entries => this.entries = entries);
+    }
+}
+
+-----------------------------------------------------------------
+
+ENTRY-COMMENT-FORM.COMPONENT.HTML:
+
+<form (submit)="onSubmit()" #commentForm="ngForm">
+    <div>
+        <label for="name">Name</label>
+        <input type="text" name="name" [(ngModel)]="name" />
+    </div>
+    <div>
+        <label for="comment">Comment</label>
+        <textarea name="comment" [(ngModel)]="comment"></textarea>
+    </div>
+    <div>
+        <button>Submit</button>
+    </div>
+</form>
+
+------------------------------------------------------------------
+
+ENTRY-COMMENT-FORM.COMPONENT.TS:
+
+import { Component, EventEmitter, Output, ViewChild, Input } from '@angular/core';
+import { NgForm } from '@angular/forms';
+import { EntryService } from '../shared/entry.service';
+
+@Component({
+    selector: 'app-entry-comment-form',
+    templateUrl: 'entry-comment-form.component.html'
+})
+
+export class EntryCommentFormComponent {
+    name: string = "";
+    comment: string = "";
+    @Input() entryId: number;
+    @Output() onCommentAdded = new EventEmitter<{name: string; comment:string;}>();
+    @ViewChild('commentForm') commentForm: NgForm;
+
+    constructor(private entryService: EntryService) {
+
+    }
+
+    onSubmit(commentForm: NgForm) {
+        let comment = { name: this.name, comment: this.comment };
+        this.entryService.addComment(this.entryId, comment)
+            .then(() => {
+                this.onCommentAdded.emit(comment);
+                    this.commentForm.resetForm();
+            })
+        this.onCommentAdded.emit(comment);
+        this.commentForm.resetForm();
+    }
+}
+
+----------------------------------------------------------------------
+
+ENTRY.COMPONENT.CSS:
+
+figure {
+    margin: 0;
+    border: 1px solid #000;
+    position: relative;
+}
+
+figcaption {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: 1.2em;
+    padding: 10px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+:host {
+    padding: 1em;
+    display: block;
+}
+
+.actions {
+    padding: 1em 0;
+}
+
+.liked {
+    color: red;
+}
+
+---------------------------------------------------------------
+
+ENTRY.COMPONENT.HTML:
+
+<h2>{{entry.title}}</h2>
+<figure>
+    <img src="{{entry.photo}}">
+    <figcaption>{{entry.description}}</figcaption>
+</figure>
+<div class="actions">
+    <button type="button" (click)="isLiked = !isLiked" [ngClass]="{liked: isLiked}">♥</button>
+    <button type="button" (click)="showComments = !showComments">Comments ({{entry.comments.length}})</button>
+</div>
+
+<div class="comments" *ngIf="showComments">
+    <div class="comment" *ngFor="let comment of entry.comments">
+        <p><strong>{{entry.comment.name}}</strong> {{comment.comment}}</p>
+    </div>
+    <app-entry-comment-form (onCommentAdded)="onCommentAdded($event)" [entryId]="entry.id"></app-entry-comment-form>
+</div>
+
+--------------------------------------------------------------------
+
+ENTRY.COMPONENT.TS:
+
+import { Component, Input } from "@angular/core";
+import { Entry } from '../shared/entry.model';
+
+@Component({
+    selector: 'app-entry',
+    templateUrl: 'entry.component.html',
+    styleUrls: ['entry.component.css']
+})
+
+export class EntryComponent {
+    @Input() entry: Entry;
+    
+    onCommentAdded(comment: {name: string; comment: string;}) {
+        this.entry.comments.push(comment);
+    }
+}
+
+-------------------------------------------------------------------------
+
+ENTRY.MODEL.TS:
+
+export class Entry {
+    title: string;
+    photo: string;
+    description: string;
+    comments: any[];
+}
+
+----------------------------------------------------------------------
+
+ENTRY.SERVICE.TS:
+
+import { Entry } from './entry.model';
+import { Injectable } from '@angular/core';
+import { Http } from '@angular/http';
+
+@Injectable()
+export class EntryService {
+
+    constructor(private http: Http) {
+
+    }
+
+    addComment(entryId: number, comment: {name: string; comment: string;}) {
+        return this.http.post('/app/entries/${entryId}/comments', comment)
+            .toPromise();
+    }
+
+    getEntries(): Promise<Entry[]> {
+        return this.http.get('/app/entries')
+                .toPromise()
+                .then(response => response.json().data as Entry[]);
+    }
+}
+
+----------------------------------------------------------------------------
+
+INDEX.TS:
+
+export * from './shared/entry.service';
+export * from './entry-list/entry-list.component';
+export * from './entry/entry.component';
+export * from './entry/entry-comment-form.component';
+
+---------------------------------------------------------------------------------
+
+WEBPACK.CONFIG.JS:
+
+module.exports = require('./config/release.config');
